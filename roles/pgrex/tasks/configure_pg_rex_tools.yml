@@ -1,0 +1,51 @@
+---
+- name: configure a PG-REX operation tool
+  lineinfile:
+    path: /etc/pg-rex_tools.conf
+    state: present
+    regexp: '^{{ item.regexp }}'
+    line: "{{ item.line }} "
+  with_items:
+    - { regexp: "D_LAN_IPAddress" , line: "D_LAN_IPAddress = {{ dlan[0].ip }}, {{ dlan[1].ip }}" }
+    - { regexp: "IC_LAN_IPAddress" , line: "IC_LAN_IPAddress = ({{ iclan[0].ip }}, {{ iclan[2].ip }}) , ({{ iclan[1].ip }}, {{ iclan[3].ip }})" }
+    - { regexp: "Archive_dir" , line: "Archive_dir = {{ postgresql_archive.path }}" }
+    - { regexp: "IPADDR_STANDBY" , line: "IPADDR_STANDBY = enable" }
+    - { regexp: "HACLUSTER_NAME" , line: "HACLUSTER_NAME = pgrex_cluster" }
+    - { regexp: "STONITH" , line: "STONITH = disable" }
+
+- name: install packages
+  dnf:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - lsof
+
+- name: configure a .bashrc
+  lineinfile:
+    path: /root/.bashrc
+    state: present
+    line: "{{ item }}"
+    owner: root
+    group: root
+  with_items:
+    - export PATH=/usr/local/bin:$PATH   # path which pg-rex operation tools are installed
+
+- name: permit password authentication for PG-REX operation tool
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    state: present
+    regexp: '^{{ item.regexp }}'
+    line: "{{ item.line }} "
+  with_items:
+    - { regexp: "PasswordAuthentication" , line: "PasswordAuthentication yes" }
+
+- name: restart sshd
+  systemd:
+    name: sshd
+    state: restarted
+
+- name: update PGREX common.pm for disable checking stonith disable or not, and workaround for the issue (See README.md).
+  copy:
+    src: usr/local/share/perl5/PGRex/common.pm
+    dest: /usr/local/share/perl5/PGRex/common.pm
+    mode: '0755'

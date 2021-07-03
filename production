@@ -1,0 +1,3 @@
+[pgrex]
+pgrex01 role=primary
+pgrex02 role=standby

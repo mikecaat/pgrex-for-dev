@@ -1,0 +1,5 @@
+---
+- hosts: pgrex
+  become: yes
+  roles:
+    - pgrex

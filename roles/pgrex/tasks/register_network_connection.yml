@@ -1,0 +1,54 @@
+---
+- name: ensure directories exists
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - ~/.ssh
+
+- name: generate private/public key
+  openssh_keypair:
+    path: ~/.ssh/id_rsa
+    size: 2048
+
+- name: fetch public keys from one server to another
+  fetch: 
+    src: "~/.ssh/id_rsa.pub"
+    dest: "buffer/{{ ansible_hostname }}-id_rsa.pub"
+    flat: yes
+
+- name: add the public keys to authorized_keys
+  authorized_key:
+    user: root
+    state: present
+    key: "{{ lookup('file','buffer/{{ item }}-id_rsa.pub')}}"
+  when: item != ansible_hostname
+  with_items: "{{ groups['pgrex'] }}"
+
+- name: get fingerprints from servers
+  shell: ssh-keyscan -H {{ item }} > /tmp/{{ item }}.fingerprints
+  when: role == "primary"
+  with_items:
+    - "{{ dlan[0].ip }}"
+    - "{{ dlan[1].ip }}"
+
+- name: fetch fingerprints from servers
+  fetch: 
+    src: "/tmp/{{ item }}.fingerprints"
+    dest: "buffer/{{ item }}.fingerprints"
+    flat: yes
+  when: role == "primary"
+  with_items:
+    - "{{ dlan[0].ip }}"
+    - "{{ dlan[1].ip }}"
+
+- name: add fingerprints to known_hosts
+  lineinfile:
+    dest: ~/.ssh/known_hosts
+    line: "{{ lookup('file','buffer/{{ item }}.fingerprints')}}"
+    state: present
+    create: yes
+    mode: '0644'
+  with_items:
+    - "{{ dlan[0].ip }}"
+    - "{{ dlan[1].ip }}"

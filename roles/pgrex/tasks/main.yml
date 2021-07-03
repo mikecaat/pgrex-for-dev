@@ -1,0 +1,9 @@
+---
+- include: basic_settings.yml
+- include: install.yml
+- include: install_not_pgrex.yml
+- include: create_ha_cluster.yml
+- include: create_postgresql_database_cluster.yml
+- include: configure_pg_rex_tools.yml
+- include: register_network_connection.yml
+- include: configure_resource.yml

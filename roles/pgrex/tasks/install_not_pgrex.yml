@@ -1,0 +1,11 @@
+---
+# install useful tools though these are not related to pg-rex
+- name: install useful tools which are not related to pg-rex
+  dnf:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python3-psycopg2   # to use ansible postgresql_user module
+    - vim
+    - glibc-langpack-ja  # locale for perl
+    - glibc-langpack-en  # locale for perl

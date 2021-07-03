@@ -1,0 +1,104 @@
+---
+- name: configure a .bash_profile
+  lineinfile:
+    path: /var/lib/pgsql/.bash_profile
+    state: present
+    line: "{{ item }}"
+    owner: postgres
+    group: postgres
+  with_items:
+    - export PATH={{ postgresql_bin }}:$PATH
+    - export PGDATA={{ postgresql_PGDATA }}
+
+- name: configure a .pgpass
+  lineinfile:
+    path: /var/lib/pgsql/.pgpass
+    state: present
+    line: "{{ item }}"
+    owner: postgres
+    group: postgres
+    create: true
+    mode: '0600'
+  with_items:
+    - "{{ dlan[0].ip }}:5432:replication:{{ postgresql_repuser.name }}:{{ postgresql_repuser.password }}"
+    - "{{ dlan[1].ip }}:5432:replication:{{ postgresql_repuser.name }}:{{ postgresql_repuser.password }}"
+    - "{{ dvlan[0].ip }}:5432:replication:{{ postgresql_repuser.name }}:{{ postgresql_repuser.password }}"
+
+# todo: enable to make them empty
+- name: create directories for postgresql
+  file:
+    path: "{{ item.path }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+    state: directory
+  with_items:
+    - "{{ postgresql_data }}"
+    - "{{ postgresql_wal }}"
+    - "{{ postgresql_archive }}"
+
+- name: make data directory
+  become: yes
+  become_user: postgres
+  command: >
+    {{ postgresql_bin }}/initdb
+    -D {{ postgresql_data.path }}
+    -X {{ postgresql_wal.path }}
+    --encoding=UTF-8
+    --no-locale
+    --data-checksums
+  args:
+    creates: "{{ postgresql_data.path }}/postgresql.conf"
+    
+  when: role == "primary"
+
+- name: configure postgresql settings
+  lineinfile:
+    path: "{{ postgresql_data.path }}/postgresql.conf"
+    line: "{{ item }}"
+  with_items: "{{ postgresql_settings }}"
+  when: role == "primary"
+
+- name: configure pg_hba.conf
+  lineinfile:
+    path: "{{ postgresql_data.path }}/pg_hba.conf"
+    line: "{{ item }}"
+  when: role == "primary"
+  with_items:
+    - "host   replication    repuser      {{ dlan[0].ip }}/32       scram-sha-256"
+    - "host   replication    repuser      {{ dlan[1].ip }}/32       scram-sha-256"
+
+- name: copy a postgres unit file
+  copy:
+    src: /usr/lib/systemd/system/{{ postgresql_service }}.service
+    dest: /etc/systemd/system/
+    remote_src: true
+
+- name: configure a postgresql unit file
+  lineinfile:
+    path: /etc/systemd/system/{{ postgresql_service }}.service
+    state: present
+    backrefs: yes
+    regexp: "^Environment=PGDATA="
+    line: "Environment=PGDATA={{ postgresql_data.path }}"
+
+- name: start postgresql
+  systemd: 
+    name: "{{ postgresql_service }}"
+    state: started
+    daemon_reload: yes
+  when: role == "primary"
+
+- name: create a user for replication
+  postgresql_user:
+    db: postgres
+    name: "{{ postgresql_repuser.name }}"
+    password: "{{ postgresql_repuser.password }}"
+    role_attr_flags: REPLICATION,LOGIN
+  when: role == "primary"
+
+- name: stop postgresql
+  systemd: 
+    name: "{{ postgresql_service }}"
+    state: stopped
+  when: role == "primary"

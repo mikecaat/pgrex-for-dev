@@ -1,0 +1,57 @@
+---
+- name: install packages for installing pg-rex packages
+  dnf:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - epel-release  # perl-Net-OpenSSH for PG-REX operation tool
+
+- name: install Pacemaker
+  dnf:
+    name: "{{ item }}"
+    enablerepo: ha
+    state: present
+  with_items:
+    - pcs
+    - pacemaker
+    - fence-agents-all
+
+- name: install pm_extra_tools
+  dnf:
+    name: "{{ pm_extra_tools_url }}"
+    disable_gpg_check: yes
+    state: present
+
+- name: install PostgreSQL
+  dnf:
+    name: "{{ postgresql_url }}/{{ item }}"
+    disable_gpg_check: yes
+    enablerepo: ha
+    state: present
+  with_items: "{{ postgresql_packages }}"
+
+- name: ensure a PG-REX operation tool directory exists
+  file:
+    path: /tmp/pg_rex_operation_tool
+    state: directory
+
+- name: download a PG-REX operation tool
+  unarchive:
+    src: "{{ pg_rex_operation_url }}"
+    dest: /tmp/pg_rex_operation_tool
+    remote_src: yes
+
+- name: find rpms
+  find:
+    paths: /tmp/pg_rex_operation_tool
+    file_type: "file"
+    patterns: "*.rpm"
+    recurse: yes
+  register: rpms
+
+- name: install a PG-REX operation tool
+  dnf:
+    name: "{{ item.path }}"
+    disable_gpg_check: yes
+    state: present
+  with_items: "{{ rpms.files }}"

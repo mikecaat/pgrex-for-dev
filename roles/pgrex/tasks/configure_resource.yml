@@ -1,0 +1,20 @@
+---
+- set_fact:
+    pmc_resource: PG-REX_pm_pcsgen_env.csv
+
+- name: distribute pacemaker resource configuration
+  template:
+    src: "root/{{ pmc_resource }}.j2"
+    dest: "{{ pcm_resource_conf_dir }}/{{ pmc_resource }}"
+
+# workaround because 'ascii' codec can't decode byte error occured when generating remote side
+#- name: generate pacemaker resource xml file
+#  shell: sh -c "/bin/pm_pcsgen \"{{ pcm_resource_conf_dir }}/{{ pmc_resource }}\""
+- name: distribute pacemaker resource xml and shellscript file
+  copy: 
+    src: "root/{{ item }}"
+    dest: "{{ pcm_resource_conf_dir }}/{{ item }}"
+    mode: '0644'
+  with_items:
+    - PG-REX_pm_pcsgen_env.sh
+    - PG-REX_pm_pcsgen_env.xml

@@ -1,0 +1,49 @@
+---
+- name: start pcsd service
+  systemd:
+    name: pcsd
+    state: started
+    enabled: true
+
+- name: configure hacluster user's password
+  user:
+    name: "{{ pcmk_user }}"
+    password: "{{ pcmk_password | password_hash('sha512') }}"
+
+- name: authenticate all nodes
+  command: >
+    pcs host auth
+    -u {{ pcmk_user }}
+    -p {{ pcmk_password | quote }}
+    {{ stonithlan[0].host }}
+    addr={{ stonithlan[0].ip }}
+    {{ stonithlan[1].host }}
+    addr={{ stonithlan[1].ip }}
+  when: role == "primary"
+ 
+- name: configure pacemaker setting
+  lineinfile:
+    path: /etc/sysconfig/pacemaker
+    state: present
+    backrefs: yes
+    regexp: '^(PCMK_fail_fast.*)$'
+    line: '#\1'
+
+- name: copy a corosync unit file
+  copy:
+    src: /usr/lib/systemd/system/corosync.service
+    dest: /etc/systemd/system/
+    remote_src: true
+
+- name: configure a corosync unit file
+  lineinfile:
+    path: /etc/systemd/system/corosync.service
+    state: present
+    backrefs: yes
+    regexp: '^({{ item }}.*)$'
+    line: '#\1'
+  with_items:
+    - Restart=
+    - RestartSec=
+    
+# skip to disable ACPI Soft-Off because it's not supported.

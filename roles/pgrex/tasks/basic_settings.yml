@@ -1,0 +1,14 @@
+---
+- name: set hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: generate /etc/hosts file
+  template:
+    src: etc/hosts.j2
+    dest: /etc/hosts
+
+- name: configure root password
+  user:
+    name: root
+    password: "{{ root_password | password_hash('sha512') }}"
