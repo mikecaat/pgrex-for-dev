@@ -3,7 +3,7 @@
   lineinfile:
     path: /etc/pg-rex_tools.conf
     state: present
-    regexp: '^{{ item.regexp }}'
+    regexp: '^{{ item.regexp }}(\s+)='
     line: "{{ item.line }} "
   with_items:
     - { regexp: "D_LAN_IPAddress" , line: "D_LAN_IPAddress = {{ dlan[0].ip }}, {{ dlan[1].ip }}" }
@@ -44,8 +44,7 @@
     name: sshd
     state: restarted
 
-- name: update PGREX common.pm for disable checking stonith disable or not, and workaround for the issue (See README.md).
-  copy:
-    src: usr/local/share/perl5/PGRex/common.pm
+- name: disable STONITH option
+  patch:
+    src: usr/local/share/perl5/PGRex/common.pm.patch
     dest: /usr/local/share/perl5/PGRex/common.pm
-    mode: '0755'

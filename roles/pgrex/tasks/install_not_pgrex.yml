@@ -5,7 +5,9 @@
     name: "{{ item }}"
     state: present
   with_items:
+    - langpacks-ja
     - python3-psycopg2   # to use ansible postgresql_user module
     - vim
     - glibc-langpack-ja  # locale for perl
     - glibc-langpack-en  # locale for perl
+    - patch  # to disable STONITH

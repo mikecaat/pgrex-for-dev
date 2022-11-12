@@ -1,17 +1,17 @@
 # Summary
 
-This repository enables to make [PG-REX 13](https://ja.osdn.net/projects/pg-rex/releases/74642) environments for development use using Vagrant, VirtualBox, and Ansible.
+This repository enables to make [PG-REX 14](https://ja.osdn.net/projects/pg-rex/releases/p18934) environments for development use using Vagrant, VirtualBox, and Ansible.
 
 # Requirements
 
-* [Vagrant](https://www.vagrantup.com/). The tested version is 2.2.16.
-* [VirtualBox](https://www.virtualbox.org/). The tested version is 6.1.22.
+* [Vagrant](https://www.vagrantup.com/). The tested version is 2.2.19.
+* [VirtualBox](https://www.virtualbox.org/). The tested version is 6.1.38.
 * [Ansible](https://github.com/ansible/ansible). The tested version is 4.2.0.
 
 # Limitation
 
-* Although PG-REX 13 doesn't assume without STONITH environment, this repository doesn't support STONITH now. So, please use this repository for your own risk.
-* Although PG-REX 13 assumed the OS is RHEL 8, this repository uses CentOS 8.4 instead to avoid license issues.
+* Although PG-REX 14 doesn't assume without STONITH environment, it modifies /usr/local/share/perl5/PGRex/common.pm to disable STONITH. So, please use it for your own risk.
+* Although PG-REX 14 assumed the OS is RHEL 8, this repository uses Rockey Linux 8.5 instead to avoid license issues.
 
 # Preparation
 
@@ -31,6 +31,18 @@ pip3 install -r requirements.txt
 vagrant up
 ```
 
+If the following error happened, you need to update packages manually.
+
+> Error: Unable to find a match: kernel-devel-4.18.0-348.20.1.el8_5.x86_64
+
+```sh
+vagrant ssh pgrex01
+[pgrex01] sudo dnf -y update
+[pgrex01] exit
+vagrant reload --provision
+vagrant up  # start pgrex02 and fix the same issue.
+```
+
 2. add ssh-config to ~/.ssh/config
 
 ```sh
@@ -40,7 +52,7 @@ vagrant ssh-config >> ~/.ssh/config
 3. execute the ansible playbook
 
 ```sh
-ansible-playbook -i production site.yml
+ansible-playbook -i development site.yml
 ```
 
 # Create the PG-REX cluster
@@ -84,41 +96,4 @@ vagrant ssh pgrex02
 
 ```
 [root@pgrex02 ~]# pcs status --full
-```
-
-
-# Note
-
-* Update /usr/share/perl5/PGRex/common.pm because pg-rex operation tools don't work properly although this is a workaround.
-  * The reason may be that pacemaker version is not the same as PG-REX13's one. PG-REX13 is tested with 2.0.3-5 and 2.0.4-6. But, this repository is tested with 2.0.5.
-  * pg-rex operation tools check if the resource is running or not. In the logic, although it uses crm_resource, the return value assumed doesn't seem appropriate. The output of crm_resource is the following, and it doesn't have the last blank, but the common.pm assumes that a blank exists in the last.
-
-```
-# crm_resource output example
-
-[root@pgrex02 ~]# crm_resource -r ping-clone -W 2> /dev/null
-resource ping-clone is running on: pgrex01
-resource ping-clone is running on: pgrex02
-```
-
-```
-# Fix to remove the last blank. The following is an example.
-
-[root@pgrex02 PGRex]# git diff
-diff --git a/common.pm b/common.pm
-index 40b4002..a00dc66 100755
---- a/common.pm
-+++ b/common.pm
-@@ -337,9 +337,9 @@ sub ping_running{
-     $array_num = scalar(@resource_id);
-
-     foreach my $id (@resource_id){
--        $result = `$CRM_RESOURCE -r $id -W 2> /dev/null | $GREP \" $my_node \"`;
-+        $result = `$CRM_RESOURCE -r $id -W 2> /dev/null | $GREP \" $my_node\"`;
-         chomp $result;
--        if ($result eq "resource $id is running on: $my_node "){
-+        if ($result eq "resource $id is running on: $my_node"){
-             $resource_check_count ++;
-         }
-     }
 ```

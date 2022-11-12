@@ -1,0 +1,8 @@
+463,465c463,465
+<     if ($config_value{'STONITH'} ne "enable"){
+<         printlog("ERROR", COMMON_MS0006);
+<     }
+---
+>     #if ($config_value{'STONITH'} ne "enable"){
+>     #    printlog("ERROR", COMMON_MS0006);
+>     #}

@@ -29,21 +29,4 @@
     regexp: '^(PCMK_fail_fast.*)$'
     line: '#\1'
 
-- name: copy a corosync unit file
-  copy:
-    src: /usr/lib/systemd/system/corosync.service
-    dest: /etc/systemd/system/
-    remote_src: true
-
-- name: configure a corosync unit file
-  lineinfile:
-    path: /etc/systemd/system/corosync.service
-    state: present
-    backrefs: yes
-    regexp: '^({{ item }}.*)$'
-    line: '#\1'
-  with_items:
-    - Restart=
-    - RestartSec=
-    
 # skip to disable ACPI Soft-Off because it's not supported.

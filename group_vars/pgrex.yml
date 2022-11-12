@@ -1,17 +1,18 @@
 ---
 # packages
 # https://linux-ha.osdn.jp/wp/dl
-pm_extra_tools_url: https://osdn.net/frs/redir.php?m=dotsrc&f=linux-ha%2F74514%2Fpm_extra_tools-1.2-1.el8.noarch.rpm
+pm_extra_tools_url: https://osdn.net/frs/redir.php?f=linux-ha%2F77854%2Fpm_extra_tools-1.4-1.el8.noarch.rpm
 
-postgresql_url: https://download.postgresql.org/pub/repos/yum/13/redhat/rhel-8-x86_64/
+
+postgresql_url: https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8-x86_64
 postgresql_packages:
-  - postgresql13-libs-13.3-2PGDG.rhel8.x86_64.rpm
-  - postgresql13-13.3-2PGDG.rhel8.x86_64.rpm
-  - postgresql13-server-13.3-2PGDG.rhel8.x86_64.rpm
-  - postgresql13-contrib-13.3-2PGDG.rhel8.x86_64.rpm
-  - postgresql13-docs-13.3-2PGDG.rhel8.x86_64.rpm
+  - postgresql14-libs-14.6-1PGDG.rhel8.x86_64.rpm
+  - postgresql14-14.6-1PGDG.rhel8.x86_64.rpm
+  - postgresql14-server-14.6-1PGDG.rhel8.x86_64.rpm
+  - postgresql14-contrib-14.6-1PGDG.rhel8.x86_64.rpm
+  - postgresql14-docs-14.6-1PGDG.rhel8.x86_64.rpm
 
-pg_rex_operation_url: https://osdn.net/frs/redir.php?m=xtom_us&f=pg-rex%2F74642%2Fpg-rex13-1.0-1.tar.gz
+pg_rex_operation_url: https://ja.osdn.net/frs/redir.php?f=pg-rex%2F77837%2Fpg-rex14-3.0-1.tar.gz
 
 # user configure
 root_password: root
@@ -23,7 +24,7 @@ pcm_resource_conf_dir: /root
 
 # postgresql configure
 postgresql_PGDATA: /dbfp/pgdata/data
-postgresql_bin: /usr/pgsql-13/bin
+postgresql_bin: /usr/pgsql-14/bin
 postgresql_data:
   { path: "/dbfp/pgdata/data", owner: "postgres", group: "postgres", mode: "700" }
 postgresql_wal:
@@ -47,32 +48,32 @@ postgresql_settings:
   - hot_standby_feedback = on
   - wal_receiver_timeout = 20s
   - restart_after_crash = off
-postgresql_service: postgresql-13
+postgresql_service: postgresql-14
 postgresql_repuser: { name: "repuser", password: "reppasswd" } 
 
 # network
 slan:
-  - { host: "pgrex01", nic: "eth1", ip: "192.168.1.10" , cidr: 24 }
-  - { host: "pgrex02", nic: "eth1", ip: "192.168.1.20" , cidr: 24 }
-  - { host: "ping"   , nic: "eth1", ip: "192.168.1.1"  , cidr: 24}
+  - { host: "pgrex01", nic: "eth1", ip: "192.168.56.10" , cidr: 24 }
+  - { host: "pgrex02", nic: "eth1", ip: "192.168.56.20" , cidr: 24 }
+  - { host: "ping"   , nic: "eth1", ip: "192.168.56.1"  , cidr: 24}
 
 dlan:
-  - { host: "pgrex01", nic: "eth2", ip: "192.168.2.10", cidr: 24 }
-  - { host: "pgrex02", nic: "eth2", ip: "192.168.2.20", cidr: 24 }
+  - { host: "pgrex01", nic: "eth2", ip: "192.168.57.10", cidr: 24 }
+  - { host: "pgrex02", nic: "eth2", ip: "192.168.57.20", cidr: 24 }
 
 iclan:
-  - { host: "pgrex01", nic: "eth3", ip: "192.168.3.10", cidr: 24 }
-  - { host: "pgrex01", nic: "eth4", ip: "192.168.4.10", cidr: 24 }
-  - { host: "pgrex02", nic: "eth3", ip: "192.168.3.20", cidr: 24 }
-  - { host: "pgrex02", nic: "eth4", ip: "192.168.4.20", cidr: 24 }
+  - { host: "pgrex01", nic: "eth3", ip: "192.168.58.10", cidr: 24 }
+  - { host: "pgrex01", nic: "eth4", ip: "192.168.59.10", cidr: 24 }
+  - { host: "pgrex02", nic: "eth3", ip: "192.168.58.20", cidr: 24 }
+  - { host: "pgrex02", nic: "eth4", ip: "192.168.59.20", cidr: 24 }
 
 stonithlan:  # stonith is not supported.
-  - { host: "pgrex01", nic: "eth5", ip: "172.20.5.10", cidr: 24 }
-  - { host: "pgrex02", nic: "eth5", ip: "172.20.5.20", cidr: 24 }
+  - { host: "pgrex01", nic: "eth5", ip: "192.168.60.10", cidr: 24 }
+  - { host: "pgrex02", nic: "eth5", ip: "192.168.60.20", cidr: 24 }
 
 svlan:
-  - { host: "primary",   nic: "eth1", ip: "192.168.1.11", cidr: 24 }
-  - { host: "secondary", nic: "eth1", ip: "192.168.1.21", cidr: 24 }
+  - { host: "primary",   nic: "eth1", ip: "192.168.56.11", cidr: 24 }
+  - { host: "secondary", nic: "eth1", ip: "192.168.56.21", cidr: 24 }
 
 dvlan:
-  - { host: "replication", nic: "eth2", ip: "192.168.2.30", cidr: 24 }
+  - { host: "replication", nic: "eth2", ip: "192.168.57.30", cidr: 24 }
